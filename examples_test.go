@@ -1,9 +1,3 @@
-# goshippo
-Ship your packages programmatically with GoShippo's API
-
-## Examples:
-* Preamble:
-```go
 package goshippo_test
 
 import (
@@ -12,10 +6,7 @@ import (
 
 	"github.com/orijtech/goshippo/v1"
 )
-```
 
-* Create an address
-```go
 func Example_CreateAddress() {
 	client, err := goshippo.NewClientFromEnv()
 	if err != nil {
@@ -42,10 +33,7 @@ func Example_CreateAddress() {
 
 	fmt.Printf("Created address: %+v\n", addr)
 }
-```
 
-* Access an account by ID
-```go
 func Example_AddressByID() {
 	client, err := goshippo.NewClientFromEnv()
 	if err != nil {
@@ -59,10 +47,7 @@ func Example_AddressByID() {
 
 	fmt.Printf("Here is the address: %+v\n", addr)
 }
-```
 
-* Validate an address by ID
-```go
 func Example_ValidateAddress() {
 	client, err := goshippo.NewClientFromEnv()
 	if err != nil {
@@ -76,10 +61,7 @@ func Example_ValidateAddress() {
 
 	fmt.Printf("Here is the address: %+v\n", addr)
 }
-```
 
-* List addresses
-```go
 func Example_ListAddresses() {
 	client, err := goshippo.NewClientFromEnv()
 	if err != nil {
@@ -101,4 +83,3 @@ func Example_ListAddresses() {
 		}
 	}
 }
-```
