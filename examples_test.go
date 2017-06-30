@@ -97,3 +97,27 @@ func Example_ListAddresses() {
 		}
 	}
 }
+
+func Example_CreateParcel() {
+	client, err := goshippo.NewClientFromEnv()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	parcel, err := client.CreateParcel(&goshippo.Parcel{
+		Length: 10.3,
+		Width:  12.0,
+		Height: 2,
+		Weight: 99.2,
+
+		DistanceUnit: goshippo.DistanceInch,
+		MassUnit:     goshippo.MassKilogram,
+
+		ParcelTemplate: goshippo.FedExExtraLargeBox2,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("created parcel: %+v\n", parcel)
+}

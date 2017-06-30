@@ -240,11 +240,63 @@ func TestValidateAddress(t *testing.T) {
 	}
 }
 
+func TestCreateParcel(t *testing.T) {
+	client, err := goshippo.NewClient(token1)
+	if err != nil {
+		t.Fatalf("address client err: %v", err)
+	}
+	client.SetHTTPRoundTripper(&backend{route: createParcelRoute})
+
+	tests := [...]struct {
+		p       *goshippo.Parcel
+		wantErr bool
+	}{
+		0: {p: &goshippo.Parcel{}, wantErr: true},
+		1: {p: nil, wantErr: true},
+		2: {
+			p: &goshippo.Parcel{
+				Length: 10.3,
+				Width:  12.0,
+				Height: 25,
+				Weight: 99.2,
+
+				DistanceUnit: goshippo.DistanceYard,
+				MassUnit:     goshippo.MassKilogram,
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		parcel, err := client.CreateParcel(tt.p)
+		if tt.wantErr {
+			if err == nil {
+				t.Errorf("#%d: want non-nil error", i)
+			}
+			continue
+		}
+
+		if err != nil {
+			t.Errorf("#%d: gotErr=%v", i, err)
+			continue
+		}
+		if parcel == nil {
+			t.Errorf("#%d: expected non-nil parcel", i)
+			continue
+		}
+
+		if reflect.DeepEqual(parcel, blankParcel) {
+			t.Errorf("#%d: expected a non-blank parcel", i)
+		}
+	}
+}
+
 const (
 	createAddressRoute   = "/create-address"
 	addressByIDRoute     = "/retrieve-address"
 	validateAddressRoute = "/validate-address"
 	listAddressesRoute   = "/list-addresses"
+
+	createParcelRoute = "/create-parcel"
 )
 
 const (
@@ -264,6 +316,9 @@ func (b *backend) RoundTrip(req *http.Request) (*http.Response, error) {
 		return b.validateAddressRoundTrip(req)
 	case listAddressesRoute:
 		return b.listAddressesRoundTrip(req)
+
+	case createParcelRoute:
+		return b.createParcelRoundTrip(req)
 	default:
 		return makeResp(fmt.Sprintf("%q unknown route", b.route), http.StatusNotFound), nil
 	}
@@ -360,6 +415,37 @@ func (b *backend) createAddressRoundTrip(req *http.Request) (*http.Response, err
 	}
 
 	return respFromFile("./testdata/address-1.json")
+}
+
+var blankParcel goshippo.Parcel
+
+func (b *backend) createParcelRoundTrip(req *http.Request) (*http.Response, error) {
+	if badAuthResp, err := checkBadAuth(req, "POST"); badAuthResp != nil || err != nil {
+		return badAuthResp, err
+	}
+	if req.Body == nil {
+		return makeResp("expecting a non-nil body", http.StatusBadRequest), nil
+	}
+	defer req.Body.Close()
+
+	if got, want := req.Header.Get("Content-Type"), "application/json"; got != want {
+		return makeResp(fmt.Sprintf("got contentType=%q want=%q", got, want), http.StatusBadRequest), nil
+	}
+
+	slurp, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return makeResp(err.Error(), http.StatusBadRequest), nil
+	}
+
+	parcel := new(goshippo.Parcel)
+	if err := json.Unmarshal(slurp, parcel); err != nil {
+		return makeResp(err.Error(), http.StatusBadRequest), nil
+	}
+	if reflect.DeepEqual(*parcel, blankParcel) {
+		return makeResp("expecting a non blank body", http.StatusBadRequest), nil
+	}
+
+	return respFromFile("./testdata/parcel-1.json")
 }
 
 func respFromFile(path string) (*http.Response, error) {
